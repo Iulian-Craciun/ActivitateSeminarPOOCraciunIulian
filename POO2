@@ -1,0 +1,153 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class ArticolVandabil {
+public:
+    virtual double calculeazaTVA() const = 0; 
+    virtual ~ArticolVandabil() {} 
+};
+
+class Produs : public ArticolVandabil {
+private:
+    static int contorProduse;
+    string nume;
+    double* pret;
+
+public:
+    Produs() {
+        nume = "Anonim";
+        pret = new double(0.0);
+        contorProduse++;
+    }
+
+    Produs(const string& nume, double pret) {
+        this->nume = nume;
+        this->pret = new double(pret);
+        contorProduse++;
+    }
+
+    Produs(const Produs& sursa) {
+        this->nume = sursa.nume;
+        this->pret = new double(*(sursa.pret)); 
+        contorProduse++;
+    }
+
+    Produs& operator=(const Produs& sursa) {
+        if (this != &sursa) {
+            this->nume = sursa.nume;
+            delete this->pret;
+            this->pret = new double(*(sursa.pret));
+        }
+        return *this;
+    }
+
+    ~Produs() override { 
+        if (pret != nullptr) {
+            delete pret; 
+            pret = nullptr;
+        }
+        contorProduse--;
+    }
+
+    Produs& operator++() {
+        if (this->pret != nullptr) {
+            (*(this->pret)) += 1.0;
+        }
+        return *this;
+    }
+
+    double calculeazaTVA() const override {
+        const double RATA_TVA = 0.19;
+        if (this->pret != nullptr) {
+            return (*(this->pret)) * RATA_TVA;
+        }
+        return 0.0;
+    }
+
+    string getNume() const {
+        return nume;
+    }
+
+    double getPret() const {
+        return *pret; 
+    }
+
+    static int getContorProduse() {
+        return contorProduse;
+    }
+
+    void setNume(const string& numeNou) {
+        nume = numeNou;
+    }
+
+    void setPret(double pretNou) {
+        if (pret != nullptr) { 
+            *pret = pretNou;
+        }
+    }
+
+    friend ostream& operator<<(ostream& out, const Produs& p);
+    friend istream& operator>>(istream& in, Produs& p);
+};
+
+int Produs::contorProduse = 0;
+
+ostream& operator<<(ostream& out, const Produs& p) {
+    out << "Produs: " << p.nume << ", Pret: " << *p.pret << " RON";
+    out << " (TVA: " << p.calculeazaTVA() << " RON)"; 
+    return out;
+}
+
+istream& operator>>(istream& in, Produs& p) {
+    cout << "Nume: ";
+    in >> p.nume; 
+
+    cout << "Pret: ";
+    double valoarePret;
+    in >> valoarePret; 
+
+    if (p.pret != nullptr) {
+        *(p.pret) = valoarePret;
+    }
+    return in;
+}
+
+int main() {
+    cout << "--- Test Clasa Produs & Clasa Abstracta ArticolVandabil ---\n";
+    
+    Produs p1;
+    cout << "Contor inainte de citire: " << Produs::getContorProduse() << endl;
+    cout << "Introduceti datele pentru p1:" << endl;
+    cin >> p1;
+
+    Produs p2("Telefon", 2000.0);
+    Produs p3 = p2; 
+
+    cout << "\nAfisare dupa citire si copiere:" << endl;
+    cout << "p1: " << p1 << endl;
+    cout << "p2: " << p2 << endl;
+    cout << "p3 (copie p2): " << p3 << endl;
+    cout << "Contor curent: " << Produs::getContorProduse() << endl;
+    
+    cout << "\nTest 2: Operatorul de atribuire (=) - Deep Copy" << endl;
+    p1 = p2;
+    p2.setPret(5000.0); 
+    p2.setNume("Telefon Nou");
+
+    cout << "p1 (dupa atribuire): " << p1 << endl; 
+    cout << "p2 (dupa modificare): " << p2 << endl; 
+    
+    cout << "\nTest 3: Operatorul de pre-incrementare (++)" << endl;
+    ++p3; 
+    cout << "p3 (dupa ++p3): " << p3 << endl;
+
+    cout << "\nTest 4: Polimorfism cu clasa abstracta" << endl;
+    ArticolVandabil* a = &p2; 
+    cout << "TVA p2 prin pointer de baza: " << a->calculeazaTVA() << " RON" << endl;
+
+    cout << "\nFinal program. Destructorii vor rula... Contor final: " << Produs::getContorProduse() << endl;
+
+    return 0;
+}
