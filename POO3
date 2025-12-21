@@ -1,0 +1,136 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class ArticolVandabil {
+public:
+    virtual double calculeazaTVA() const = 0;
+    virtual void afisareDetalii() const = 0;
+    virtual ~ArticolVandabil() {}
+};
+
+class Produs : public ArticolVandabil {
+private:
+    static int contorProduse;
+    string nume;
+    double* pret;
+
+public:
+    Produs() {
+        nume = "Anonim";
+        pret = new double(0.0);
+        contorProduse++;
+    }
+
+    Produs(const string& nume, double pretVal) {
+        this->nume = nume;
+        this->pret = new double(pretVal);
+        contorProduse++;
+    }
+
+    Produs(const Produs& sursa) {
+        this->nume = sursa.nume;
+        this->pret = new double(*(sursa.pret));
+        contorProduse++;
+    }
+
+    Produs& operator=(const Produs& sursa) {
+        if (this != &sursa) {
+            this->nume = sursa.nume;
+            if (this->pret != nullptr) delete this->pret;
+            this->pret = new double(*(sursa.pret));
+        }
+        return *this;
+    }
+
+    ~Produs() override {
+        if (pret != nullptr) {
+            delete pret;
+            pret = nullptr;
+        }
+        contorProduse--;
+    }
+
+    double calculeazaTVA() const override {
+        const double RATA_TVA = 0.19;
+        return (pret != nullptr) ? (*pret * RATA_TVA) : 0.0;
+    }
+
+    void afisareDetalii() const override {
+        cout << "[PRODUS] " << nume << " | Pret: " << *pret 
+             << " RON | TVA: " << calculeazaTVA() << " RON" << endl;
+    }
+
+    char operator[](int index) const {
+        if (index >= 0 && index < (int)nume.length()) {
+            return nume[index];
+        }
+        return '\0';
+    }
+
+    bool operator<(const Produs& alta) const {
+        return *(this->pret) < *(alta.pret);
+    }
+
+    Produs& operator++() {
+        if (this->pret != nullptr) (*this->pret)++;
+        return *this;
+    }
+
+    string getNume() const { return nume; }
+    double getPret() const { return *pret; }
+    static int getContorProduse() { return contorProduse; }
+    void setNume(const string& n) { nume = n; }
+    void setPret(double p) { if (pret) *pret = p; }
+
+    friend ostream& operator<<(ostream& out, const Produs& p);
+    friend istream& operator>>(istream& in, Produs& p);
+};
+
+int Produs::contorProduse = 0;
+
+ostream& operator<<(ostream& out, const Produs& p) {
+    out << p.nume << " (" << *p.pret << " RON)";
+    return out;
+}
+
+istream& operator>>(istream& in, Produs& p) {
+    cout << "Nume: "; in >> p.nume;
+    cout << "Pret: "; 
+    double v; in >> v;
+    if (p.pret) *(p.pret) = v;
+    else p.pret = new double(v);
+    return in;
+}
+
+int main() {
+    ArticolVandabil* catalog[3];
+
+    catalog[0] = new Produs("Laptop", 3500.0);
+    catalog[1] = new Produs("Mouse", 120.0);
+    catalog[2] = new Produs("Tastatura", 250.0);
+
+    for (int i = 0; i < 3; i++) {
+        catalog[i]->afisareDetalii();
+    }
+
+    Produs p1("Telefon", 2000.0);
+    Produs p2("Casti", 500.0);
+
+    cout << "Litera: " << p1[2] << endl;
+
+    if (p2 < p1) {
+        cout << p2.getNume() << " e mai ieftin" << endl;
+    }
+
+    ++p2;
+
+    for (int i = 0; i < 3; i++) {
+        delete catalog[i];
+    }
+
+    cout << "Produse ramase: " << Produs::getContorProduse() << endl;
+
+    return 0;
+}
